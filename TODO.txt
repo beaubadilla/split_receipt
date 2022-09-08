@@ -1,0 +1,15 @@
+If user accidentally provides empty input to "Purchase, price, and name(s)", catch "IndexError" and allow user to continue
+Allow app to handle case when a person orders two of the same item
+Print out example of format for "Purchase, price, and name(s)" prompt. I always question if it is comma or space delimited
+    - (I think this is the same?. had it separated) Any prompt asking for list, display format
+Allow calculations through input (e.g."add-ons"; milk tea=4.49 + boba=0.65)
+    "Enter all purchases. Enter DONE when finished."
+    "Purchase, price, and name(s)? jasgreenmt 4.49+0.65 chea
+Fix Tip format. incorrectly showing 0.18% when it should be 18%
+Fix table format to space evenly. Long names, especially for Name and column names make it bad
+Alternating row colors or divider
+
+Completely redesign.
+        1) Read in all receipts and the orders
+        2) Take input for Person and their entire order
+                e.g. Beau short rib, mac, hotpot
