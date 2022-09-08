@@ -24,8 +24,26 @@
 #   couple
 #   EDIT: well actually, I could just keep the same implementation and simply just not put them
 #       in a pair. Doing it the way mentioned above COULD involve a lot of prompts. Didn't think too hard
+from functools import wraps
+import re
 
-TAB = '\t'
+stack_of_inputs = []
+
+
+def add(func):
+    @wraps(func)
+    def _add(*args):
+        result = func(*args)
+        stack_of_inputs.append(result)
+        # print(*args)
+        return result
+
+    return _add
+
+
+input = add(input)
+
+
 def main():
     # People that need to I need to request money from
     people = get_people()
@@ -144,9 +162,6 @@ def main():
 
     print("Split Receipt Finished")
 
-    max_len_name = max(len(person.name) for person in people)
-    MAX_CHAR_COL = 7  # based on observation. subject to change
-    max_tabs = int(max_len_name / MAX_CHAR_COL)
     line = ""
     sorted_events = sorted(all_events)
     for i, event in enumerate(sorted_events):
@@ -155,61 +170,59 @@ def main():
         else:
             line += f"{bcolors.YELLOW}{event}\t{bcolors.ENDC}"
 
-    print(f"Event:{TAB * max_tabs}{line}")
+    print(f"Event:\t{line}")
 
     line = ""
     for i, event in enumerate(sorted_events):
         if i % 2 == 0:
-            line += f'{bcolors.ORANGE}{all_events[event]["tax"] * 100:.2f}%\t{bcolors.ENDC}'
+            line += (
+                f'{bcolors.ORANGE}{all_events[event]["tax"] * 100:.2f}%\t{bcolors.ENDC}'
+            )
         else:
-            line += f'{bcolors.YELLOW}{all_events[event]["tax"] * 100:.2f}%\t{bcolors.ENDC}'
-    print(f"(Tax:{TAB * max_tabs}{line})")
+            line += f'{bcolors.YELLOW}{all_events[event]["tax"] * 100}%\t{bcolors.ENDC}'
+    print(f"(Tax:\t{line})")
 
     line = ""
     for i, event in enumerate(sorted_events):
         if i % 2 == 0:
-            line += f'{bcolors.ORANGE}{all_events[event]["tip"] * 100:.2f}%\t{bcolors.ENDC}'
+            line += (
+                f'{bcolors.ORANGE}{all_events[event]["tip"] * 100:.2f}%\t{bcolors.ENDC}'
+            )
         else:
-            line += f'{bcolors.YELLOW}{all_events[event]["tip"] * 100:.2f}%\t{bcolors.ENDC}'
-    print(f"(Tip:{TAB * max_tabs}{line})")
-
+            line += f'{bcolors.YELLOW}{all_events[event]["tip"]:.2f}%\t{bcolors.ENDC}'
+    print(f"(Tip:\t{line})")
 
     for person in people:
-        len_name = len(person.name)
-        if len_name <= 7: num_tabs = 2
-        else: num_tabs = 1
-        # If len(name) <= 7
-        # if len(name) == 15, len <= 7 needs 2 tabs, else 1 tab
         orders = "("
-        # line = f"{bcolors.BLUE}{person.name}\t{bcolors.ENDC}"
-        line = f"{bcolors.BLUE}{person.name}{TAB * num_tabs}{bcolors.ENDC}"
+        line = f"{bcolors.BLUE}{person.name}\t{bcolors.ENDC}"
 
         num_events = 0
         for event in sorted_events:
-            curr_order = ''
+            curr_order = ""
             if num_events % 2 == 0:
                 line += bcolors.ORANGE
             else:
                 line += bcolors.YELLOW
 
             if event in person.purchases:
-                line += f"${round(person.purchases[event]['total'], 2):.2f}{TAB}"
-                # line += "$" + str(round(person.purchases[event]["total"], 2)) + "\t"
+                line += "$" + str(round(person.purchases[event]["total"], 2)) + "\t"
             else:
                 line += "N/A" + "\t"
             if event in person.purchases:
-                curr_order = ", ".join(person.purchases[event]["orders"])
-                orders += curr_order
+                orders += ", ".join(person.purchases[event]["orders"])
 
             # if orders is more than just '(', otherwise it
             # could result in '(, fries)'
-            if len(curr_order) > 1:
+            if len(orders) > 1:
                 orders += ", "
 
             line += bcolors.ENDC
             num_events += 1
         orders += ")"
-        line += f"{bcolors.GREEN}" f"${person.total:.2f}" f"{bcolors.ENDC}"
+        line += f"{bcolors.GREEN}" f"${person.total}" f"{bcolors.ENDC}"
+
+        orders = re.sub(r", ,", "", orders)
+        orders = re.sub(r", \)", ")", orders)
         print(f"{line}{bcolors.PURPLE} {orders}{bcolors.ENDC}")
 
 
@@ -225,14 +238,14 @@ def get_people():
 def get_tax(subtotal):
     tax = float(input(f"\t{bcolors.YELLOW}Tax? {bcolors.ENDC}"))
     tax_perc = round(tax / subtotal, 4)
-    print(f"\t\t{bcolors.YELLOW}Tax % = {tax_perc * 100:.2f}%{bcolors.ENDC}")
+    print(f"\t\t{bcolors.YELLOW}Tax % = {tax_perc * 100}%{bcolors.ENDC}")
     return tax_perc
 
 
 def get_tip(subtotal):
     tip = float(input(f"{bcolors.YELLOW}\tTip? {bcolors.ENDC}"))
     tip_perc = round(tip / subtotal, 4)
-    print(f"\t\t{bcolors.YELLOW}Tip % = {tip_perc * 100:.2f}%{bcolors.ENDC}")
+    print(f"\t\t{bcolors.YELLOW}Tip % = {tip_perc * 100}%{bcolors.ENDC}")
     return tip_perc
 
 
@@ -327,9 +340,7 @@ class bcolors:
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
     RED = "\033[31m"
-    TEST = (
-        "\033[38;5;82m"
-    )  # [;;<FG color>m, look at https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797 "256 colors"
+    TEST = "\033[38;5;82m"  # [;;<FG color>m, look at https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797 "256 colors"
     PINK = "\033[38;5;213m"
     YELLOW = "\033[38;5;226m"
     ORANGE = "\033[38;5;208m"
@@ -339,7 +350,14 @@ if __name__ == "__main__":
     print(
         f"{bcolors.UNDERLINE}{bcolors.PINK}Hello, This is a tool to split receipts.{bcolors.ENDC}"
     )
-    main()
+    try:
+        main()
+        for response in stack_of_inputs:
+            print(response)
+    except:
+        print(f"\n\nProgram exiting..." f"\nStack:")
+        for response in stack_of_inputs:
+            print(response)
 
 # Future
 # Incorporate Venmo/Zelle API
