@@ -37,7 +37,7 @@ class Person:
     def total(self):
         return round(self._total, 2)
 
-    def add_purchase(self, event, item, price, tax, tip):
+    def add_purchase(self, event, item: Item, price, tax, tip):
         # TODO: refactor. seems redundant to always pass tax/tip
         if event not in self.purchases:
             self.purchases[event] = {}

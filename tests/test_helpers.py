@@ -4,42 +4,47 @@ import helpers
 
 
 class TestHelpers(unittest.TestCase):
-    def test_is_comma_delimited_true(self) -> None:
-        test_cases: list[str] = [
-            "Beau,Willie,Allen",
-            "Beau, Willie,Allen",
-            "Beau, Willie, Allen",
-            "Beau, Willie, Allen ",
-            " Beau, Willie, Allen ",
-            "  Beau,  Willie, Allen  ",
-            "Beau ,Willie  ,Allen  ",
-            "  Beau  ,  Willie  ,  Allen  ",
-        ]
+    def test_parse_names_one_name(self) -> None:
+        names_str = "Jake"
+        expect = ["Jake"]
 
-        for tc in test_cases:
-            with self.subTest(msg=tc):
-                actual = helpers.is_comma_delimited(tc)
-                self.assertTrue(actual)
+        actual = helpers.parse_names(names_str)
+        self.assertEqual(expect, actual)
 
-    def test_is_comma_delimited_false(self) -> None:
-        test_cases: list[str] = [
-            "Beau Willie Allen",
-            "Beau/Willie/Allen",
-            "Beau+Willie+Allen",
-            "Beau,Willie+Allen",
-            "Beau,Willie Allen",
-        ]
+    def test_parse_names_one_name_with_last_name(self) -> None:
+        names_str = "Jake B"
+        expect = ["Jake B"]
 
-        for tc in test_cases:
-            with self.subTest(msg=tc):
-                actual = helpers.is_comma_delimited(tc)
-                self.assertFalse(actual)
+        actual = helpers.parse_names(names_str)
+        self.assertEqual(expect, actual)
 
-    def test_is_comma_delimited_exception(self) -> None:
-        test_case = None
+    def test_parse_names_two_names(self) -> None:
+        names_str = "Jake and April"
+        expect = ["Jake", "April"]
 
-        self.assertRaises(ValueError, helpers.is_comma_delimited(test_case))
+        actual = helpers.parse_names(names_str)
+        self.assertEqual(expect, actual)
 
+    def test_parse_names_two_names_with_last_name(self) -> None:
+        names_str = "Jake B and April"
+        expect = ["Jake B", "April"]
+
+        actual = helpers.parse_names(names_str)
+        self.assertEqual(expect, actual)
+
+    def test_parse_names_multiple_names(self) -> None:
+        names_str = "Jake, Alan K, and Wayne"
+        expect = ["Jake", "Alan K", "Wayne"]
+
+        actual = helpers.parse_names(names_str)
+        self.assertEqual(expect, actual)
+
+    def test_parse_names_multiple_names_with_last_name(self) -> None:
+        names_str = "Jake, Alan K, and Wayne W W"
+        expect = ["Jake", "Alan K", "Wayne W W"]
+
+        actual = helpers.parse_names(names_str)
+        self.assertEqual(expect, actual)
 
 if __name__ == "__main__":
     unittest.main()

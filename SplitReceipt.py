@@ -52,6 +52,7 @@ class SplitReceipt:
         self.people = ...
         self.receipts = []
         self.items = ...
+        self.orders = List[str] = []
 
     def prompt_people(self) -> List[str]:
         people: str = input(f"List of people: ")
@@ -75,15 +76,66 @@ class SplitReceipt:
             receipt = Receipt()
             receipt.prompt_details()
             self.receipts.append(receipt)
-            # event_name = input(f"Event name? ")
-            # subtotal = input(f"Subtotal? ")
-            # tax = prompt_decimal("Tax? ")
-            # tax = prompt_decimal("Tip? ")
+            print(receipt)
         ...
 
     def prompt_orders(self):
         """Prompt for each item"""
-        ...
+        orders = []
+        print("Who got what?")
+        print('Enter "DONE" when finished')
+        while (response:=input("> ")) != "DONE":
+            response_split = response.split()
+
+            required_keywords = {"got", "shared", "covered"}
+            if not any(kw in response_split for kw in required_keywords):
+                print(f"Did not find any keywords ({', '.join(required_keywords)})")
+            
+            orders.append(response)
+        
+        self.orders = orders
+        return self.orders
+
+    def parse_orders(self):
+        parsed = []
+        for order in self.orders:
+            if "got" in order.split():
+                kw = "got"
+            elif "shared" in order.split():
+                kw = "shared"
+            elif "covered" in order.split():
+                kw = "covered"
+            names, items = response.split(kw)
+
+            names: List[str] = helpers.parse_names(names)
+            items = ...
+            parsed.append((names, kw, items))
+
+        return parsed
+    
+    def add_individual_purchase(self, names, items):
+        people = [self.people[name] for name in names]
+
 
     def summary(self):
         ...
+
+    def run(self):
+        # Get all involved people
+
+        # Get details of all receipts
+        ## Create events
+        ## Create items
+    
+        # Get all orders
+
+        # For each order,
+        # populate each person's info
+
+        # For each person,
+        # retrieve summary
+        ## for each event, print personal "receipt"
+
+if __name__ == "__main__":
+    app = SplitReceipt()
+    app.run()

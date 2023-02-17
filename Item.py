@@ -3,9 +3,11 @@ from dataclasses import dataclass
 
 @dataclass
 class Item:
-    price: float
     name: str
-    _count: int
+    base_price: float
+    tip: float = 0
+    tax: float = 0
+    _count: int = 0
     add_ons: ... = None
     description: str = None
 
@@ -16,3 +18,7 @@ class Item:
     @count.setter
     def count(self, val: int):
         self._count += val
+
+    @property
+    def price(self):
+        return self.base_price + (self.tax * self.base_price) + (self.tip * self.base_price)

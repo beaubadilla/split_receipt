@@ -2,6 +2,7 @@ from datetime import datetime, date
 import re
 from typing import Dict, List
 
+import helpers
 from Item import Item
 from Event import Event
 
@@ -24,6 +25,22 @@ class Receipt:
         self.paid_by: str = ...
         self.discount: float = ...
 
+    def __str__(self) -> None:
+        if not self.event:
+            return "No receipt details"
+
+        items_str = "\n".join([f"({item.count}) {item.name}\t${item.price:.2f}" for item in self.items.values()])
+        str_ = (
+            f"{self.event.name}"
+            f"Paid by {self.paid_by.title()} on {self.date}"
+            f"{items_str}"
+            f"Subtotal: ${self.subtotal:0.2f}"
+            f"Tax: {self.tax * 100:0.2f}%"
+            f"Tip: {self.tip * 100:0.2f}%"
+            f"Total: ${self.total:0.2f}"
+        )
+        return str_
+
     def prompt_details(self):
         self.event = self.prompt_event()
         self.subtotal = self.prompt_subtotal()
@@ -35,7 +52,7 @@ class Receipt:
         # self.discount = self.prompt_discount()
 
     def prompt_event(self) -> str:
-        self.event = Event(input("Event Name"))
+        self.event = Event(input("Event Name? "))
         return self.event
 
     def prompt_subtotal(self) -> float:
@@ -57,7 +74,7 @@ class Receipt:
         tip: float = None
         while not accepted:
             response: str = input("Tip? ")
-            if DECIMAL_REGEX.match(response):
+            if DECIMAL_REGEX.match(response) or response == "0":
                 tip = float(response)
                 accepted = True
             elif PERCENTAGE_REGEX.match(response):
@@ -80,7 +97,7 @@ class Receipt:
         tax: float = None
         while not accepted:
             response: str = input("Tax? ")
-            if DECIMAL_REGEX.match(response):
+            if DECIMAL_REGEX.match(response) or response == "0":
                 tax = float(response)
                 accepted = True
             elif PERCENTAGE_REGEX.match(response):
@@ -88,7 +105,6 @@ class Receipt:
                 tax = float(tax)
                 accepted = True
             elif DOLLAR_REGEX.match(response):
-                # separate from dollar sign
                 _, tax = response.split("$")
                 tax = float(tax)
                 accepted = True
@@ -114,19 +130,19 @@ class Receipt:
 
     def prompt_items(self) -> Dict[str, Item]:
         print('Enter "DONE" when there are no more items.')
-        while (name := input("Name of item? ")) != "done":
+        while (name := input("Name of item? ")) != "DONE":
             # All upper means it is an acronym. Leave as is
             if name.upper() != name:
                 name = name.title()
 
-            price = input(f"Price of {name}? ")
+            base_price = input(f"Price of {name}? ")
             count = input(f'How many "{name}"? ')
             if name in self.items:
                 print(f"{name} already exists. Adding {count} more.")
                 self.items[name].count += count
                 print(f"Total {name} = {self.items[name].count}")
             else:
-                item = Item(name, price, count)
+                item = Item(name, base_price, count, self.tax, self.tip)
                 self.items[name.lower()] = item
 
         return self.items
@@ -135,3 +151,7 @@ class Receipt:
         paid_by = input("Who paid? ").title()
         self.paid_by = paid_by
         return self.paid_by
+
+    def calculate_order(self, item_name, count) -> float:
+        price = self.items[item_name].price
+        return price * count

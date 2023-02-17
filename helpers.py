@@ -1,30 +1,23 @@
 import re
+from typing import List
 
-# Matches "100%", "0%", "99%", "51%", "51.5%", "18%", "18.213%", "0.5%", "1%"
-PERCENTAGE_REGEX = re.compile(r"^[0-9]+\.?[0-9]+%$")
+def parse_names(names_str) -> List[str]:
+    # Multiple names
+    if "," in names_str:
+        # remove ","
+        names_tokens: List[str] = names_str.split(",")
+        
+        # remove "and"
+        names = [re.sub(r"\band\b", "", token) for token in names_tokens]
 
-DECIMAL_REGEX = re.compile(r"^[0-9]+\.[0-9]+$")
-DOLLAR_REGEX = re.compile(r"^\$[0-9]+\.?[0-9]*$")
+        names = [name.strip() for name in names]
+    # Two names
+    elif "and" in names_str and "," not in names_str:
+        # remove "and"
+        names: List[str] = names_str.split("and")
+        names = [word.strip() for word in names]
+    # One name
+    else:
+        names = [names_str]
 
-
-def prompt_d(prompt: str) -> float:
-    """Prompt for an input representing a decimal, but allow both decimal or percentage form
-
-    0.18    => 0.18
-    18%     => 0.18
-    """
-    accepted: bool = False
-    val: float = None
-    while not accepted:
-        response = input(prompt)
-        if DECIMAL_REGEX.match(response):
-            val = float(response)
-            accepted = True
-        elif PERCENTAGE_REGEX.match(response):
-            val, _ = response.split("%")
-            val = float(val)
-            accepted = True
-        else:
-            print(f"Invalid input. Acceptable formats: 18%, 18.0%, 0.18")
-
-    return val
+    return names

@@ -48,3 +48,4 @@ Any prompt asking for list, display format
 
 Utilize venmo/zelle api
 Create decorator for colored messages
+What if we go to the same place consecutive days? same day?
