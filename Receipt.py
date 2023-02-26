@@ -14,16 +14,29 @@ DOLLAR_REGEX = re.compile(r"^\$[0-9]+\.?[0-9]*$")
 
 
 class Receipt:
-    def __init__(self) -> None:
-        self.event: Event = ...
-        self.subtotal: float = ...
-        self._total: float = ...
-        self.tip: float = ...
-        self.tax: float = ...
-        self.date: date = ...
+    def __init__(
+        self,
+        event: Event = None,
+        subtotal: float = None,
+        total: float = None,
+        tip: float = None,
+        tax: float = None,
+        date_: date = None,
+        paid_by: str = None,
+    ) -> None:
+        self.event: Event = event
+        self.subtotal: float = subtotal
+        self._total: float = total
+        self.tip: float = tip
+        self.tax: float = tax
+        self.date: date = date_
         self.items: Dict[str, Item] = {}
-        self.paid_by: str = ...
-        self.discount: float = ...
+        self.paid_by: str = paid_by
+        self.discount: float = None
+
+    @property
+    def item_names(self):
+        return self.items.keys()
 
     def __str__(self) -> None:
         if not self.event:
@@ -149,7 +162,7 @@ class Receipt:
                 self.items[name].count += count
                 print(f"Total {name} = {self.items[name].count}")
             else:
-                item = Item(name, base_price, self.tax, self.tip, count)
+                item = Item(name, base_price, self.tip, self.tax, count)
                 self.items[name.lower()] = item
 
         return self.items
@@ -183,3 +196,7 @@ class Receipt:
     def calculate_order(self, item_name, count) -> float:
         price = self.items[item_name].price
         return price * count
+
+    def get(self, item_name) -> Item:
+        item_name = item_name.lower()
+        return self.items[item_name]

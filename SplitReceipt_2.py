@@ -26,20 +26,7 @@ input = required_input(input)
 class SplitReceipt:
     def __init__(self) -> None:
         self.squad = Squad()
-
-    def prompt_event_name(self) -> str:
-        event_name: str = input(f"Event? ")
-
-        if event_name.upper() == event_name:
-            return event_name
-        else:
-            return event_name.title()
-
-    def prompt_receipt_details() -> Receipt:
-        receipt = Receipt()
-        receipt.prompt_details()
-
-        return receipt
+        self.receipt = Receipt()
 
     def prompt_people(self) -> List[str]:
         names: str = input(f"List of people: ")
@@ -48,22 +35,79 @@ class SplitReceipt:
 
         return names
 
+    def prompt_receipt_details(self) -> Receipt:
+        self.receipt.prompt_details()
+
+        return self.receipt
+
+    def prompt_orders(self) -> List[str]:
+        orders = []
+        print("Who got what?")
+        print('Enter "DONE" when finished')
+        while (response := input("> ")) != "DONE":
+            if not self.valid_order(response):
+                continue
+
+            orders.append(response)
+
+        return orders
+
+    def valid_order(self, order: str):
+        required_keywords = {"got", "shared", "covered"}
+        try:
+            names, _, item_names = self.parse_order(order)
+        except NameError:
+            print(f"Did not find any keywords ({', '.join(required_keywords)})")
+        except Exception:
+            print(f"Invalid order format e.g. Jake got fries")
+
+        # Check for valid name
+        for name in names:
+            if name not in self.squad.names:
+                print(f"{name} not found.")
+                return False
+
+        # Check for valid item names
+        for item_name in item_names:
+            if item_name not in self.receipt.item_names:
+                print(f"{item_name} not found.")
+                return False
+
+        return True
+
+    def parse_order(self, order: str) -> Set:
+        if "got" in order.split():
+            kw = "got"
+        elif "shared" in order.split():
+            kw = "shared"
+        elif "covered" in order.split():
+            kw = "covered"
+        names, item_names = order.split(kw)
+
+        names: List[str] = helpers.parse_names(names)
+        item_names = helpers.parse_names(item_names)
+
+        return names, kw, item_names
+
     def run(self) -> None:
-        event_name = self.prompt_event_name()
+        # self.prompt_event_name()
 
         names = self.prompt_people()
-        squad = Squad()
         for name in names:
-            squad.add(Person(name))
+            self.squad.add(Person(name))
 
-        receipt: Receipt = self.prompt_receipt_details()  # TODO: refactor
+        receipt: Receipt = self.prompt_receipt_details()
+
+        self.event_name = receipt.event.name
 
         orders: List[str] = self.prompt_orders()
-        orders_info: List[Set[str, str, str]] = self.parse_orders()
+        orders_info: List[Set[str, str, str]] = [
+            self.parse_order(order) for order in orders
+        ]
 
         for names, kw, item_names in orders_info:
             for name in names:
-                person = squad.get(name)
+                person = self.squad.get(name)
                 for item_name in item_names:
                     item = receipt.get(item_name)
 
@@ -73,7 +117,9 @@ class SplitReceipt:
                         num_splits = len(names)
                         person.add_shared_purchase(item, num_splits)
 
-        for name, person in squad.people:
+        for name, person in self.squad.people.items():
+            print(f"\n{name.title()}'s receipt for {self.event_name}")
+
             print(person.summary())
 
 

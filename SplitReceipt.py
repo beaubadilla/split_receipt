@@ -174,7 +174,7 @@ class SplitReceipt:
         # For each person,
         # retrieve summary
         ## for each event, print personal "receipt"
-        for name, person in squad.squad.items():
+        for name, person in squad.people.items():
             print(person.summary())
 
 

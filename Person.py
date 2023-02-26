@@ -10,13 +10,13 @@ class Person:
     def __init__(self, name):
         self._name: str = name
         self._total: float = 0.0
-        self.purchases: Dict[str, List[Item]] = defaultdict(list)
-        self.payment_preference: str = ...  # Venmo, Zelle, Splitwise(?)
-        self.phone_number: str = ...
-        self.email: str = ...
+        self.items: List[Item] = []
+        # self.payment_preference: str = ...  # Venmo, Zelle, Splitwise(?)
+        # self.phone_number: str = ...
+        # self.email: str = ...
 
-        self.id = Person.count
-        self.increment_count()
+        # self.id = Person.count
+        # self.increment_count()
 
     def __str__(self):
         return f"{self.name} ordered {self.purchases} totaling to {self.total}"
@@ -41,19 +41,72 @@ class Person:
     def total(self):
         return round(self._total, 2)
 
-    def add_individual_purchase(self, event, item):
-        self.purchases[event].append(item)
+    def add_individual_purchase(self, item):
+        self.items.append(item)
 
     def add_shared_purchase(self, item, num_split_between: int):
-        if event not in self.purchase:
-            self.purchases[event] = []
-
-        # if item.name
         price = round(item.price / num_split_between, 2)
         split_item = Item(item.name, price, item.tip, item.tax, 1)
+        self.items.append(split_item)
 
     def get_event_total(self, event):
         return round(self.purchases[event]["total"], 2)
 
     def summary(self) -> str:
+        """
+        (1)  LG Banana Coffee $  5.50
+        (10) Coffee Bags      $165.00
+
+        Subtotal              $170.50
+        Tax (10.00%)          $ 17.05
+        Tip (0.59%)           $  1.00
+
+        Total                 $188.55
+
+        Joseph H. and Peyton D.'s receipt for Spice-C
         ...
+        """
+        # Calculate first col length
+        # consists of
+        # parenthesis + number of digits of the largest count e.g. (1)
+        # char limit for item name (arbitrary)
+        max_count = max(item.count for item in self.items)
+        num_digits_count = len(str(max_count))
+        item_name_limit = 15
+        num_delimiters = 2 + 1  # 2 parentheseses, 1 space
+        first_col_length = num_digits_count + item_name_limit + num_delimiters
+
+        subtotal = sum(item.base_price for item in self.items)
+
+        # Use subtotal's number of digits because it might have more digits than any individual item
+        # e.g.
+        # item1 price=100, item2 price=5 -> num digits would equal 3
+        # vs
+        # item1 price=50, item2 price=50 -> num digits would equal 2 (when it should be 3) if we didn't use subtotal
+        num_digits_price = len(str(subtotal))
+
+        for item in self.items:
+            count_str = f"({item.count:<{num_digits_count}})"
+            item_name_str = f"{item.name:<{item_name_limit}.{item_name_limit}}"
+            price_str = f"${item.price:<{num_digits_price}.2f}"
+
+            print(f"{count_str} {item_name_str} {price_str}")
+
+            tax = item.tax
+            tip = item.tip
+
+        # subtotal should inherently align
+        tax_str = f"Tax: ({tax * 100:.2f}%)"
+        tax_dollar = tax * subtotal
+
+        tip_str = f"Tip: ({tip * 100:.2f}%)"
+        tip_dollar = tip * subtotal
+
+        total = subtotal + tax_dollar + tip_dollar
+
+        print()
+        print(f"{'Subtotal':<{first_col_length}} ${subtotal:.2f}")
+        print(f"{tax_str:<{first_col_length}} ${tax_dollar:<{num_digits_price}.2f}")
+        print(f"{tip_str:<{first_col_length}} ${tip_dollar:<{num_digits_price}.2f}")
+        print()
+        print(f"{'Total':<{first_col_length}} ${total:.2f}")
