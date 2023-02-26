@@ -1,12 +1,14 @@
 import re
 from typing import List
 
+
 def parse_names(names_str) -> List[str]:
+    names_str = names_str.strip()
     # Multiple names
     if "," in names_str:
         # remove ","
         names_tokens: List[str] = names_str.split(",")
-        
+
         # remove "and"
         names = [re.sub(r"\band\b", "", token) for token in names_tokens]
 

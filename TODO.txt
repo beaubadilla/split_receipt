@@ -1,3 +1,14 @@
+1st iteration
+1) Get receipt info from manual input
+2) Get orders for each person
+3) Text to each person for confirmation (make this optional)
+    a) will need design a process for correcting orders
+4) Send venmo/zelle
+
+Goal
+1) Take picture of receipt for receipt info
+2) 
+################################################
 If user accidentally provides empty input to "Purchase, price, and name(s)", catch "IndexError" and allow user to continue
 Allow app to handle case when a person orders two of the same item
 Print out example of format for "Purchase, price, and name(s)" prompt. I always question if it is comma or space delimited

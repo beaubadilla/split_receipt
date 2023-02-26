@@ -29,7 +29,12 @@ class Receipt:
         if not self.event:
             return "No receipt details"
 
-        items_str = "\n".join([f"({item.count}) {item.name}\t${item.price:.2f}" for item in self.items.values()])
+        items_str = "\n".join(
+            [
+                f"({item.count}) {item.name}\t${item.price:.2f}"
+                for item in self.items.values()
+            ]
+        )
         str_ = (
             f"{self.event.name}"
             f"Paid by {self.paid_by.title()} on {self.date}"
@@ -42,13 +47,13 @@ class Receipt:
         return str_
 
     def prompt_details(self):
-        self.event = self.prompt_event()
-        self.subtotal = self.prompt_subtotal()
-        self.tax = self.prompt_tax()
-        self.tip = self.prompt_tip()
-        self.date = self.prompt_date()
-        self.items = self.prompt_items()
-        self.paid_by = self.prompt_paid_by()
+        self.prompt_event()
+        self.prompt_subtotal()
+        self.prompt_tax()
+        self.prompt_tip()
+        self.prompt_date()
+        self.prompt_items()
+        self.prompt_paid_by()
         # self.discount = self.prompt_discount()
 
     def prompt_event(self) -> str:
@@ -85,6 +90,7 @@ class Receipt:
                 # separate from dollar sign
                 _, tip = response.split("$")
                 tip = float(tip)
+                tip = tip / self.subtotal
                 accepted = True
             else:
                 print(f"Invalid input. Acceptable formats: 18%, 18.0%, 0.18")
@@ -107,6 +113,7 @@ class Receipt:
             elif DOLLAR_REGEX.match(response):
                 _, tax = response.split("$")
                 tax = float(tax)
+                tax = tax / self.subtotal
                 accepted = True
             else:
                 print(f"Invalid input. Acceptable formats: 18%, 18.0%, 0.18")
@@ -135,17 +142,38 @@ class Receipt:
             if name.upper() != name:
                 name = name.title()
 
-            base_price = input(f"Price of {name}? ")
+            base_price = self.prompt_base_price(name)
             count = input(f'How many "{name}"? ')
             if name in self.items:
                 print(f"{name} already exists. Adding {count} more.")
                 self.items[name].count += count
                 print(f"Total {name} = {self.items[name].count}")
             else:
-                item = Item(name, base_price, count, self.tax, self.tip)
+                item = Item(name, base_price, self.tax, self.tip, count)
                 self.items[name.lower()] = item
 
         return self.items
+
+    def prompt_base_price(self, name):
+        accepted: bool = False
+        base_price: float = None
+        while not accepted:
+            response: str = input(f"Price of {name}? ")
+            if DECIMAL_REGEX.match(response) or response == "0":
+                base_price = float(response)
+                accepted = True
+            elif PERCENTAGE_REGEX.match(response):
+                base_price, _ = response.split("%")
+                base_price = float(base_price)
+                accepted = True
+            elif DOLLAR_REGEX.match(response):
+                _, base_price = response.split("$")
+                base_price = float(base_price)
+                accepted = True
+            else:
+                print(f"Invalid input. Acceptable formats: 18%, 18.0%, 0.18")
+
+        return base_price
 
     def prompt_paid_by(self) -> str:
         paid_by = input("Who paid? ").title()
