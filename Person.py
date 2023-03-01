@@ -45,7 +45,7 @@ class Person:
         self.items.append(item)
 
     def add_shared_purchase(self, item, num_split_between: int):
-        price = round(item.price / num_split_between, 2)
+        price = round(item.base_price / num_split_between, 2)
         split_item = Item(item.name, price, item.tip, item.tax, 1)
         self.items.append(split_item)
 
@@ -88,7 +88,7 @@ class Person:
         for item in self.items:
             count_str = f"({item.count:<{num_digits_count}})"
             item_name_str = f"{item.name:<{item_name_limit}.{item_name_limit}}"
-            price_str = f"${item.price:<{num_digits_price}.2f}"
+            price_str = f"${item.base_price:<{num_digits_price}.2f}"
 
             print(f"{count_str} {item_name_str} {price_str}")
 

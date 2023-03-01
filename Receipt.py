@@ -97,7 +97,7 @@ class Receipt:
                 accepted = True
             elif PERCENTAGE_REGEX.match(response):
                 tip, _ = response.split("%")
-                tip = float(tip)
+                tip = float(tip) / 100
                 accepted = True
             elif DOLLAR_REGEX.match(response):
                 # separate from dollar sign
@@ -121,7 +121,7 @@ class Receipt:
                 accepted = True
             elif PERCENTAGE_REGEX.match(response):
                 tax, _ = response.split("%")
-                tax = float(tax)
+                tax = float(tax) / 100
                 accepted = True
             elif DOLLAR_REGEX.match(response):
                 _, tax = response.split("$")
@@ -156,7 +156,7 @@ class Receipt:
                 name = name.title()
 
             base_price = self.prompt_base_price(name)
-            count = input(f'How many "{name}"? ')
+            count = int(input(f'How many "{name}"? '))
             if name in self.items:
                 print(f"{name} already exists. Adding {count} more.")
                 self.items[name].count += count

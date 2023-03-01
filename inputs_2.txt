@@ -1,16 +1,46 @@
-Jake, April
-Phin Smith
-$170.50
-$17.05
-$1.00
-2023-02-15
-Lg Banana Coffee
-$5.50
+Beau,Willie,Allen
+The Cut
+$170
+$13.17
+18%
+2023-02-26
+Poutine
+$15.95
 1
-coffee grinds
-$165.00
-10
+Classy
+$13.95
+1
+Nashville Hot Chicken
+$14.95
+1
+Mac n Cheese
+$12.95
+1
+Shishito Peppers
+$12.95
+1
+Savory
+$32.95
+1
+Tots
+$12.95
+1
+Wings
+$15.95
+1
+Original
+$19.95
+1
+Fries
+$7.45
+1
+Bread Pudding
+$10
+1
 DONE
-Beau B
-Jake got coffee grinds and lg banana coffee
+Willie
+Beau got poutine, classy, and nashville hot chicken
+Allen got shishito peppers, savory, and mac n cheese
+Willie got tots, wings, fries, and original
+Beau, Allen, and Willie shared bread pudding
 DONE
