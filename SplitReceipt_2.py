@@ -122,6 +122,11 @@ class SplitReceipt:
 
             print(person.summary())
 
+        people = self.squad.people.values()
+        total = sum(person.total for person in people)
+        print()
+        print(f"Receipt total=${receipt.total:.2f}. Orders total=${total:.2f}")
+
 
 if __name__ == "__main__":
     SplitReceipt().run()

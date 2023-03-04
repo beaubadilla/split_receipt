@@ -39,13 +39,18 @@ class Person:
 
     @property
     def total(self):
-        return round(self._total, 2)
+        total = sum(item.base_price * item.count for item in self.items)
+
+        tax = self.items[0].tax
+        tip = self.items[0].tip
+        total = total + (total * tax) + (total * tip)
+        return total
 
     def add_individual_purchase(self, item):
         self.items.append(item)
 
     def add_shared_purchase(self, item, num_split_between: int):
-        price = round(item.base_price / num_split_between, 2)
+        price = item.base_price / num_split_between
         split_item = Item(item.name, price, item.tip, item.tax, 1)
         self.items.append(split_item)
 
@@ -76,7 +81,7 @@ class Person:
         num_delimiters = 2 + 1  # 2 parentheseses, 1 space
         first_col_length = num_digits_count + item_name_limit + num_delimiters
 
-        subtotal = sum(item.base_price for item in self.items)
+        subtotal = sum(item.base_price * item.count for item in self.items)
 
         # Use subtotal's number of digits because it might have more digits than any individual item
         # e.g.
@@ -88,7 +93,7 @@ class Person:
         for item in self.items:
             count_str = f"({item.count:<{num_digits_count}})"
             item_name_str = f"{item.name:<{item_name_limit}.{item_name_limit}}"
-            price_str = f"${item.base_price:<{num_digits_price}.2f}"
+            price_str = f"${item.base_price * item.count:<{num_digits_price}.2f}"
 
             print(f"{count_str} {item_name_str} {price_str}")
 
