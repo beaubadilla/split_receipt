@@ -1,3 +1,4 @@
+from collections import defaultdict
 from functools import wraps
 import re
 from typing import Dict, List, Set
@@ -45,6 +46,10 @@ class SplitReceipt:
         print("Who got what?")
         print('Enter "DONE" when finished')
         while (response := input("> ")) != "DONE":
+            if response == "DONE":
+                unaccounted_orders = self.find_unaccounted_orders(orders)
+                if unaccounted_orders:
+                    response = ""
             if not self.valid_order(response):
                 continue
 
@@ -75,6 +80,28 @@ class SplitReceipt:
 
         return True
 
+    def find_unaccounted_orders(self, orders):
+        unaccounted_orders = {}
+        items = defaultdict(int)
+        for order in orders:
+            names, kw, item_names = self.parse_order(order)
+
+            for item_name in item_names:
+                if kw == "got":
+                    count = len(names)
+
+                elif kw == "shared":
+                    count = 1
+                items[item_name] += count
+
+        for item in items:
+            receipt_item = self.receipt.get(item.name)
+            if receipt_item.count != item[item_name]:
+                print(f"{item.name}'s count is incorrect.")
+            unaccounted_orders[item_name] = abs(receipt_item.count - item[item_name])
+
+        return unaccounted_orders
+
     def parse_order(self, order: str) -> Set:
         if "got" in order.split():
             kw = "got"
@@ -90,8 +117,6 @@ class SplitReceipt:
         return names, kw, item_names
 
     def run(self) -> None:
-        # self.prompt_event_name()
-
         names = self.prompt_people()
         for name in names:
             self.squad.add(Person(name))
@@ -117,10 +142,13 @@ class SplitReceipt:
                         num_splits = len(names)
                         person.add_shared_purchase(item, num_splits)
 
+        # Verify totals match
+        # if self.double_check()
+
         for name, person in self.squad.people.items():
             print(f"\n{name.title()}'s receipt for {self.event_name}")
 
-            print(person.summary())
+            person.summary()
 
 
 if __name__ == "__main__":
