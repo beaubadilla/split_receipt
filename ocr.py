@@ -212,15 +212,19 @@ def resize_with_aspect_ratio(image, width=None, height=None, inter=cv2.INTER_ARE
     return cv2.resize(image, dim, interpolation=inter)
 
 
-def find_corners(img):
-    # Thanks https://stackoverflow.com/questions/60941012/how-do-i-find-corners-of-a-paper-when-there-are-printed-corners-lines-on-paper-i
+def find_corners(bw_img):
+    """
+    Thanks https://stackoverflow.com/questions/60941012/how-do-i-find-corners-of-a-paper-when-there-are-printed-corners-lines-on-paper-i
+    Algorithm above
+    1. Apply grayscale
+    2. Apply blur
+    3. Apply threshold (i.e. black & white)
+    4. Apply morphology
+    5. Find contours
+    6. Approximate polygon -> 4 vertices that represent corners
 
-    # convert img to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    resize = resize_with_aspect_ratio(gray, 540, 300)
-    cv2.imshow("gray", resize)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    To allow flexibility, we'll skip steps 1-4. Main takeaway is to provide an image where, as best as possible, only 4 contours can be found. Typically will be a black & white image
+    """
 
     # blur image
     # kernal size (ksize) parameter must be high for the images we are using. I think it's because the size of the image is very large?
@@ -255,10 +259,17 @@ def find_corners(img):
 
     # get perimeter and approximate a polygon
     peri = cv2.arcLength(big_contour, True)
+    # note that approxPolyDP looks for any polygon, not specifically a rectangle
     corners = cv2.approxPolyDP(big_contour, 0.04 * peri, True)
+
+    # try
+    # from https://stackoverflow.com/questions/71164603/how-to-find-the-best-quadrilateral-to-approximate-an-opencv-contour
+    # on second thought, might be doing the exact same thing
+    # corners = cv2.approxPolyDP(big_contour, 0.02 * cv2.arcLength(c, True), closed=True)
 
     corners = [corner[0] for corner in corners]
 
+    # Add blue circles onto image
     for corner in corners:
         x, y = corner.ravel()
         cv2.circle(img, (x, y), 50, (255, 0, 0), -1)
@@ -284,10 +295,6 @@ def main():
     fn = args[0]
 
     write = len(args) == 1
-    # write = True
-    # if fn[-1] == "--no_write":
-    #     write = False
-    #     fn = fn[:-1]
 
     name = fn.split("/")[-1].split(".")[0]
     print(f"{fn=}")
@@ -295,46 +302,30 @@ def main():
 
     fp = BASE_FP + fn
     img = cv2.imread(fp)
+    imgs = {"original": img}
 
-    warp_perspective_img = warp_perspective(img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.warp_perspective.JPG", warp_perspective_img)
+    # Find corners
+    ## Apply grayscale
+    gray = grayscale(img)
+    imgs["gray"] = gray
 
-    inverted_img = invert(img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.inverted.JPG", inverted_img)
+    ## Blur
+    ### larger kernel -> larger blur
+    kernel = (51, 51)
+    blur = cv2.GaussianBlur(gray, kernel, 0)
+    imgs["blur"] = blur
 
-    grayscaled_img = grayscale(warp_perspective_img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.grayscaled.JPG", grayscaled_img)
+    ## Threshold; typically for black & white
+    ### Otsu's threshold
+    _, bw = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    imgs["bw"] = bw
 
-    bw_img = bw(grayscaled_img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.bw.JPG", bw_img)
-
-    no_noise_img = noise_removal(bw_img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.no_noise.JPG", no_noise_img)
-
-    eroded_img = thin_font(no_noise_img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.eroded.JPG", eroded_img)
-
-    dilated_img = thick_font(no_noise_img)
-    cv_display(dilated_img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.dilated.JPG", dilated_img)
-
-    # deskew() won't be used for now
-    # if write: cv2.imwrite(f"static/changes/{name}.deskew.JPG", deskew_img)
-
-    no_borders_img = remove_border(no_noise_img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.no_borders.JPG", no_borders_img)
-
-    with_borders_img = missing_borders(no_borders_img)
-    if write:
-        cv2.imwrite(f"static/changes/{name}.with_borders.JPG", with_borders_img)
+    # Display all imgs into separate windows
+    for name, img in imgs.items():
+        resize = resize_with_aspect_ratio(img, 300, 200)
+        cv2.imshow(name, resize)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     # ocr_result = pytesseract.image_to_string(dilated_img, lang="eng")
     # print(ocr_result)
