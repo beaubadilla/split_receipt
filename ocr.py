@@ -301,7 +301,7 @@ def main():
     print(f"{name=}")
 
     fp = BASE_FP + fn
-    img = cv2.imread(fp)
+    img = cv2.imread(fp, 0)
     imgs = {"original": img}
 
     # Find corners
