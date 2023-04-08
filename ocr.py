@@ -1,4 +1,5 @@
 import configparser
+import math
 import sys
 from typing import Tuple
 
@@ -158,15 +159,12 @@ def missing_borders(img):
     return image_with_border
 
 
-def warp_perspective(img):
+def warp_perspective(img, corners):
     width, height, *_ = img.shape
-
+    print(f"{width=}, {height=}")
     # Get top-left, top-right, bottom-left, bottom-right points
-    tl, bl, br, tr = find_corners(img)
-    print(f"{tl}")
-    print(f"{tr}")
-    print(f"{bl}")
-    print(f"{br}")
+    # tl, bl, br, tr = corners
+    tl, tr, bl, br = corners
 
     point_matrix = np.float32([tl, tr, bl, br])
 
@@ -174,11 +172,6 @@ def warp_perspective(img):
     cv2.circle(img, (tr[0], tr[1]), 50, (0, 255, 0), cv2.FILLED)
     cv2.circle(img, (bl[0], bl[1]), 50, (255, 0, 0), cv2.FILLED)
     cv2.circle(img, (br[0], br[1]), 50, (0, 0, 0), cv2.FILLED)
-
-    resize = resize_with_aspect_ratio(img, 540, 300)
-    cv2.imshow("test", resize)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
     converted_points = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
 
@@ -189,10 +182,11 @@ def warp_perspective(img):
 
 
 def resize_window(img, width, height, name):
-    cv2.namedWindow(name, cv2.WINDOW_NORMAL)
+    # cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     img_resized = cv2.resize(img, (width, height))
-    cv2.imshow(name, img_resized)
-    cv2.waitKey(0)
+    return img_resized
+    # cv2.imshow(name, img_resized)
+    # cv2.waitKey(0)
 
 
 def resize_with_aspect_ratio(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -212,7 +206,7 @@ def resize_with_aspect_ratio(image, width=None, height=None, inter=cv2.INTER_ARE
     return cv2.resize(image, dim, interpolation=inter)
 
 
-def find_corners(bw_img):
+def find_corners(morph, original):
     """
     Thanks https://stackoverflow.com/questions/60941012/how-do-i-find-corners-of-a-paper-when-there-are-printed-corners-lines-on-paper-i
     Algorithm above
@@ -228,24 +222,24 @@ def find_corners(bw_img):
 
     # blur image
     # kernal size (ksize) parameter must be high for the images we are using. I think it's because the size of the image is very large?
-    blur = cv2.GaussianBlur(gray, (51, 51), 0)
-    resize = resize_with_aspect_ratio(blur, 540, 300)
-    cv2.imshow("blur", resize)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    # exit()
+    # blur = cv2.GaussianBlur(gray, (51, 51), 0)
+    # resize = resize_with_aspect_ratio(blur, 540, 300)
+    # cv2.imshow("blur", resize)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    # # exit()
 
-    # do otsu threshold on gray image
-    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    resize = resize_with_aspect_ratio(thresh, 540, 300)
-    cv2.imshow("thresh", resize)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # # do otsu threshold on gray image
+    # thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    # resize = resize_with_aspect_ratio(thresh, 540, 300)
+    # cv2.imshow("thresh", resize)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
-    # apply morphology
-    kernel = np.ones((7, 7), np.uint8)
-    morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-    morph = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel)
+    # # apply morphology
+    # kernel = np.ones((7, 7), np.uint8)
+    # morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    # morph = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel)
 
     # get largest contour
     contours = cv2.findContours(morph, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -272,11 +266,9 @@ def find_corners(bw_img):
     # Add blue circles onto image
     for corner in corners:
         x, y = corner.ravel()
-        cv2.circle(img, (x, y), 50, (255, 0, 0), -1)
-    resize = resize_with_aspect_ratio(img, 540, 300)
+        cv2.circle(original, (x, y), 50, (255, 0, 0), -1)
+    resize = resize_with_aspect_ratio(original, 300, 200)
     cv2.imshow("corners", resize)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
     return corners
 
@@ -286,49 +278,165 @@ def clahe(img, clipLimit: float, tileGridSize: Tuple[int, int]):
 
     A bright photo will have all its pixels confined to a relatively high value. Picture a histogram that is thin and tall. CLAHE will essentially normalize it, spreading the values so the histogram is shorter and wider.
     """
-    clahe = cv2.createCLAHE(clipLimit, tileGridSize)
-    return clahe.apply(img)
+    clahe_ = cv2.createCLAHE(clipLimit, tileGridSize)
+
+    new_img = clahe_.apply(img)
+    return new_img
+
+
+def getAngle(a, b, c):
+    # https://manivannan-ai.medium.com/find-the-angle-between-three-points-from-2d-using-python-348c513e2cd
+    ang = math.degrees(
+        math.atan2(c[1] - b[1], c[0] - b[0]) - math.atan2(a[1] - b[1], a[0] - b[0])
+    )
+    return ang + 360 if ang < 0 else ang
+
+
+def best_corners_angle(corners):
+    best_corners = set()
+    n = len(corners)
+
+    for i in range(n):
+        # print(i)
+        for j in range(i + 1, n):
+            # print(i, j)
+            for k in range(j + 1, n):
+                angle = getAngle(corners[i], corners[j], corners[k])
+
+                if abs(angle - 90) < 2:
+                    best_corners.add(tuple(corners[i]))
+                    best_corners.add(tuple(corners[j]))
+                    best_corners.add(tuple(corners[k]))
+
+    if len(best_corners) != 4:
+        print(f"After checking the angles, cannot find exactly 4 corners")
+        return corners
+
+    # return as list because sets are not ordered
+    return list(best_corners)
+
+
+def order_points(vertices):
+    # https://stackoverflow.com/questions/66916409/python-find-most-upper-left-coordinate-and-corners-in-opencv-numpy
+    # order: [tl, tr, bl, br]
+    sums = [sum(vertex) for vertex in vertices]
+    tl_sum = min(sums)
+    br_sum = max(sums)
+
+    for vertex in vertices:
+        sum_ = sum(vertex)
+        if sum_ == tl_sum:
+            tl = vertex
+        elif sum_ == br_sum:
+            br = vertex
+
+    diffs = [(vertex[1] - vertex[0]) for vertex in vertices]
+    tr_diff = min(diffs)
+    bl_diff = max(diffs)
+
+    for vertex in vertices:
+        diff = vertex[1] - vertex[0]
+        if diff == tr_diff:
+            tr = vertex
+        elif diff == bl_diff:
+            bl = vertex
+
+    print(f"ordered: {[tl, tr, bl, br]}")
+    return [tl, tr, bl, br]
 
 
 def main():
     args = sys.argv[1:]
     fn = args[0]
 
-    write = len(args) == 1
+    # write = len(args) == 1
+    apply_gray = args[1] == "--gray"
+    apply_clahe = args[1] == "--clahe"
 
     name = fn.split("/")[-1].split(".")[0]
     print(f"{fn=}")
     print(f"{name=}")
 
     fp = BASE_FP + fn
-    img = cv2.imread(fp, 0)
+
+    if apply_gray:
+        img = cv2.imread(fp)
+    if apply_clahe:
+        img = cv2.imread(fp, 0)
+    # test_img = cv2.imread(fp)
     imgs = {"original": img}
+
+    # gray = None
+    # clahe_ = None
+
+    # create a CLAHE object (Arguments are optional).
+    ## must use imread(fp, 0), not imread(fp)
+    if apply_clahe:
+        clahe_ = clahe(img, 8.0, (8, 8))
+        imgs["clahe"] = clahe_
 
     # Find corners
     ## Apply grayscale
-    gray = grayscale(img)
-    imgs["gray"] = gray
+    ## Cannot use in juction with CLAHE
+    ## probably for the same reason, cannot use imread(fp, 0)
+    if apply_gray:
+        gray = grayscale(img)
+        imgs["gray"] = gray
 
     ## Blur
     ### larger kernel -> larger blur
     kernel = (51, 51)
-    blur = cv2.GaussianBlur(gray, kernel, 0)
-    imgs["blur"] = blur
+    if apply_gray:
+        blur = cv2.GaussianBlur(gray, kernel, 0)
+        imgs["blur"] = blur
+    if apply_clahe:
+        blur = cv2.GaussianBlur(clahe_, kernel, 0)
+        imgs["blur"] = blur
 
     ## Threshold; typically for black & white
     ### Otsu's threshold
     _, bw = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     imgs["bw"] = bw
 
+    ## Apply morphology
+    kernel = np.ones((7, 7), np.uint8)
+    morph = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel)
+    morph = cv2.morphologyEx(morph, cv2.MORPH_OPEN, kernel)
+    imgs["morphology"] = morph
+
+    corners = find_corners(morph, imgs["original"])
+    print(corners)
+    if len(corners) > 4:
+        corners = best_corners_angle(corners)
+        print(f"corners after angle: {corners}")
+    corners = order_points(corners)
+
+    warp = warp_perspective(imgs["original"], corners)
+    imgs["warp"] = warp
+
+    # Transform warped image to dilated now for image_to_string()
+    # warp_gray = grayscale(warp)
+    # imgs["warp_gray"] = warp_gray
+    _, warp_bw = cv2.threshold(warp, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    imgs["warp_bw"] = warp_bw
+    warp_dilated = thick_font(warp_bw)
+    imgs["warp_dilated"] = warp_dilated
+
     # Display all imgs into separate windows
     for name, img in imgs.items():
-        resize = resize_with_aspect_ratio(img, 300, 200)
-        cv2.imshow(name, resize)
+        if "warp" in name:
+            resize = resize_window(img, 600, 800, "warp")
+            cv2.imshow(name, resize)
+        else:
+            resize = resize_with_aspect_ratio(img, 300, 200)
+            cv2.imshow(name, resize)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    # ocr_result = pytesseract.image_to_string(dilated_img, lang="eng")
-    # print(ocr_result)
+    print(f"original shape: {img.shape}")
+    print(f"warp_bw shape: {warp_bw.shape}")
+    ocr_result = pytesseract.image_to_string(warp_dilated, lang="eng")
+    print(ocr_result)
 
 
 if __name__ == "__main__":
