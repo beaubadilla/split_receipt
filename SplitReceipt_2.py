@@ -117,10 +117,12 @@ class SplitReceipt:
                         num_splits = len(names)
                         person.add_shared_purchase(item, num_splits)
 
+        print()
         for name, person in self.squad.people.items():
-            print(f"\n{name.title()}'s receipt for {self.event_name}")
+            print(f"{name.title()}'s receipt for {self.event_name}")
 
-            print(person.summary())
+            person.summary()
+            print("*" * 26)
 
         people = self.squad.people.values()
         total = sum(person.total for person in people)
