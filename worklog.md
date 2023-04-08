@@ -1,3 +1,17 @@
+# April 8, 2023
+## Wandering Thoughts
+- Receipts will always be white/light colored, so we should have a process for light-on-light-bg vs light-on-dark-bg
+    - same with photos with bright spots vs no bright spots
+
+- order_points
+- best corner angle
+- proper orientation improves results (duh), even on a pixel-level
+- CLAHE process working, but mixed results, as expected, depending on the background of the photo
+
+## Next TODO
+- get grayscale process working
+- improve set of transformations before image_to_string()
+
 # April 1, 2023
 - Happy April Fool's Day!
 - Added `issues.md`
@@ -33,7 +47,7 @@
             - two lowest of arr[1] means top
             - two highest of arr[0] means right
             - two highest of arr[1] means bottom
-            - twi lowest of arr[0] means left
+            - two lowest of arr[0] means left
         
         To have a better idea how much of a leeway between adjacent corners,
         |467-378| = 89
