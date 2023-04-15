@@ -1,3 +1,37 @@
+# April 15, 2023
+Summary: With near-perfect image conditions results in near-perfect output. Can formally convert into script, work on things mentioned in the improvements section, or start the web app
+
+- completed first pass of preprocessing
+    - near perfect results with the boiling crab receipt
+    - Order of preprocessing techniques
+        1) Retrieve warped image
+        2) Noise removal
+        3) Threshold
+        4) Morph
+            - kernel parameter had significant impact on the results, even by 1x1 grid area
+
+- Understand Deskew
+    - Deskewing is aligning a tilted/slanted image
+    - Our current resolution, warp perspective, is a method of deskewing. Another is perspective transform
+
+- Wave the white flag for dealing with folds and creases right now
+
+- Similar to folds and crease, having a depressed or bowed (i.e. concave inwards and concave outwards) significantly affects the results as one would expect.
+    - Homeography was suggested as a way to handle depressed/bowed images, but it requires a 2nd image to compare and map features which is something not practical for our app. It is good for handling a mass amount of the same document that are skewed e.g. office/government documents
+
+- Improvements
+    - shell.jpg: receipt is atop of another object that is rectangular shaped
+    - receipt_for_ocr.jpg: interesting case. looks like the corners were pretty close to expected, but the warp depressed the right side of the image
+    - brendas.jpg: thresholding makes the font worse, investigate why. text extraction with just the denoised image is practically perfect
+    - dumpling-time.jpg: current glare solution is not as robust as I'd like
+    - mission-rock.jpg: wood-background makes the warp unusable
+    - king-taco.jpg: proof that warp works pretty well when all four corners of the receipt are out of frame. near perfect results
+    - love-letter.jpg: fine tuning of warp needed. a parameter somewhere in the warp process changed a bit probabaly.
+    - phils-bbq: similar to mission-rock, wood table is impacting the warp
+
+Wandering Thoughts
+- could make a classification model to determine different backgrounds, which would have its own "pipeline" e.g. glare-y background, wood background, light background
+
 # April 9, 2023
 - imread(img, 0) vs cv2.cvtColor(img, cv2.COLORBGR2GRAY)
     - tl;dr If original image was taken as grayscale, use imread(). Otherwise, use cv2Color()
