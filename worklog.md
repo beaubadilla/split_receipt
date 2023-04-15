@@ -1,3 +1,11 @@
+# April 9, 2023
+- imread(img, 0) vs cv2.cvtColor(img, cv2.COLORBGR2GRAY)
+    - tl;dr If original image was taken as grayscale, use imread(). Otherwise, use cv2Color()
+    - not 1:1, but 99% similar
+- different Page Segmentation Modes (PSM) for Pytesseract
+    - mode (4) is definitely the one we want to use as it is recognizes text line-by-line/row-wise
+    - mode(5) might be of use, since it is mode (4) but for vertical text. Can be used if our photo is not rotated properly. However, mode (0) can provide metadata to fix rotation
+
 # April 8, 2023
 ## Wandering Thoughts
 - Receipts will always be white/light colored, so we should have a process for light-on-light-bg vs light-on-dark-bg
